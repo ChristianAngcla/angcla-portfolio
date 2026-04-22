@@ -1,9 +1,9 @@
-import Button from '../components/Button';
+import Button from '../../components/Button';
 
-import gamingPic from '../assets/gaming.jpg';
-import bakingPic from '../assets/baking.jpg';
-import hikingPic from '../assets/hiking.jpg';
-import runningPic from '../assets/running.jpg';
+import gamingPic from '../../assets/gaming.jpg';
+import bakingPic from '../../assets/baking.jpg';
+import hikingPic from '../../assets/hiking.jpg';
+import runningPic from '../../assets/running.jpg';
 
 const AboutPage = () => {
     return (
@@ -12,7 +12,7 @@ const AboutPage = () => {
                 <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
                     <div className="overflow-hidden rounded-3xl border-2 border-sky-100 shadow-xl shadow-sky-200/50">
                         <img 
-                            src="https://scontent.fmnl4-1.fna.fbcdn.net/v/t39.30808-6/615509878_869495876057975_6033171580628204368_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=uF7S17R1zuQQ7kNvwE_DJ0i&_nc_oc=AdoFTF1D2GUs9IClMdjv56kcPRWoMAZXAkxWZXOSDUaJ6fENvfFEC3CustaHAkmvq4ntDPU2V4UqsBW5VFj_-Uw9&_nc_zt=23&_nc_ht=scontent.fmnl4-1.fna&_nc_gid=4iRxpitDknzKvlrHdR_4TQ&_nc_ss=7a32e&oh=00_Afyq0ipezy76u3CCUB9leqdC7oW1IJHdl9fbeZNmJufoXQ&oe=69C9853A" 
+                            src="https://scontent.fmnl25-1.fna.fbcdn.net/v/t39.30808-6/615509878_869495876057975_6033171580628204368_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=1d70fc&_nc_eui2=AeFqf5d5ktAbVR1osTO7byW9YIHVyq0ILw5ggdXKrQgvDiuIh8JGz1Fh_K3WxX3NNNxBsW-CL_tYA1RAHWCccYPv&_nc_ohc=hPgkvOY4_dkQ7kNvwGYy1v_&_nc_oc=Adptw1LU-O34BXsCAjAC581SnNa8Tezp55-Peaaa5gaeAjGWfSXYTbPiQjcOhyQSyBE&_nc_zt=23&_nc_ht=scontent.fmnl25-1.fna&_nc_gid=XzlSCSAfW5VSVIiYuVq2WQ&_nc_ss=7a3a8&oh=00_Af3sV6XWKIgTlIVi01thqb3lx2cngMhMQEEDcWE5WnyTIg&oe=69EE36FA" 
                             alt="Ethan - Developer" 
                             className="h-[400px] w-full object-cover"
                         />

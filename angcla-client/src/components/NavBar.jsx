@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom"; 
+import { NavLink } from "react-router-dom";
+import Button from "./Button";
 
 const links = [
     { label: 'Home', to: '/' },
@@ -28,18 +29,22 @@ const NavBar = () => {
                 </NavLink>
 
                 {/* Fixed the 'mid:flex' typo to 'md:flex' so it properly hides on mobile and shows on tablets/desktops */}
-                <nav className="hidden md:flex items-center gap-2">
-                    {links.map((link) => (
-                        <NavLink
-                            key={link.to}
-                            to={link.to}
-                            end={link.to === '/'}
-                            className={navLinkClassName}
-                        >
-                            {link.label}
-                        </NavLink>
-                    ))}
-                </nav>
+                <div className="flex items-center gap-6">
+                    <nav className="hidden items-center gap-2 md:flex">
+                        {links.map((link) => (
+                            <NavLink
+                                key={link.to}
+                                to={link.to}
+                                end={link.to === "/"}
+                                className={navLinkClassName}
+                            >
+                                {link.label}
+                            </NavLink>
+                        ))}
+                    </nav>
+                    <div className="hidden h-8 w-px bg-sky-100 md:block" />
+                    <Button to="/auth/signin" variant="primary">Sign In</Button>
+                </div>
             </div>
             </header>
     
