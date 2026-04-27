@@ -21,9 +21,12 @@ const HomePage = () => {
               I am a 3rd-year IT student at National University. I am currently upskilling and building my portfolio with prototypes like <i>How to Train Your Birdie</i>, <i>Quickita</i>, <i>Floodguard</i>, and <i>Intertwine</i>.
             </p>
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button to="/about" variant="primary">
                 More About Me
+              </Button>
+              <Button to="/dashboard" variant="secondary">
+                View Dashboard
               </Button>
             </div>
           </div>

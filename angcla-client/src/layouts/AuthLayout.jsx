@@ -6,7 +6,7 @@ const AuthLayout = () => {
       <div className="grid min-h-screen w-full lg:grid-cols-2">
         <div className="hidden lg:block">
           <img
-            src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+            src="https://static0.gamerantimages.com/wordpress/wp-content/uploads/wm/2026/04/witch-hat-atelier-episode-1-release-date-and-where-to-watch-gamerant-feature.jpg?w=1600&h=900&fit=crop"
             alt="Developer coding"
             className="h-full w-full object-cover"
           />
