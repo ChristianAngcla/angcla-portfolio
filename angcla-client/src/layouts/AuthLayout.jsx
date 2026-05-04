@@ -1,6 +1,22 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 
 const AuthLayout = () => {
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  useEffect(() => {
+    if (pathname === "/" || pathname === "") {
+      document.title = "eth.dev";
+    } else if (pathname.includes("signin")) {
+      document.title = "Sign In | eth.dev";
+    } else if (pathname.includes("signup")) {
+      document.title = "Sign Up | eth.dev";
+    } else {
+      document.title = "eth.dev";
+    }
+  }, [pathname]);
+
   return (
     <section className="min-h-screen bg-slate-50 text-slate-900">
       <div className="grid min-h-screen w-full lg:grid-cols-2">

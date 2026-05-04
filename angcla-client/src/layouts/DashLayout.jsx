@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { styled, useTheme, alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -160,6 +160,10 @@ const DashLayout = () => {
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = pageTitle === "Welcome" ? "eth.dev" : `${pageTitle} | eth.dev`;
+  }, [pageTitle]);
 
   const handleDrawerOpen = () => {
     setOpen(true);
