@@ -1,8 +1,21 @@
+import { useState, useEffect } from 'react';
 import Button from '../../components/Button';
 import ArticleList from '../../components/ArticleList';
-import articles from '../../assets/article-content.js';
+import { fetchArticles } from '../../services/articleService';
+import staticArticles from '../../assets/article-content.js';
 
 const ArticleListPage = () => {
+    const [articles, setArticles] = useState([]);
+
+    useEffect(() => {
+        fetchArticles()
+            .then((res) => {
+                // Combine database articles with your original static articles
+                setArticles([...res.data.articles, ...staticArticles]);
+            })
+            .catch((err) => console.error("Failed to load articles", err));
+    }, []);
+
     return (
         <div className="flex w-full flex-col gap-6">
             <section className="border-y-2 border-sky-100 bg-white px-4 py-6 sm:px-6 sm:py-8 lg:px-8">

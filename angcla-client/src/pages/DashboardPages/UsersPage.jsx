@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -25,10 +25,11 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { DataGrid } from '@mui/x-data-grid';
-import usersSeed from '../../assets/users.json?raw';
+import { useNavigate } from 'react-router-dom';
 import { cohesiveCardStyle } from './DashboardPage';
+import { fetchUsers, createUser, updateUser } from '../../services/userService';
 
-const roles = ['admin', 'editor', 'viewer'];
+const userTypes = ['admin', 'editor', 'viewer'];
 const genders = ['male', 'female', 'other'];
 
 const blankForm = {
@@ -38,7 +39,7 @@ const blankForm = {
   gender: '',
   contactNumber: '',
   email: '',
-  role: 'editor',
+  type: 'editor',
   username: '',
   password: '',
   address: '',
@@ -48,54 +49,44 @@ const blankForm = {
 const labelize = (value) =>
   value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : '';
 
-const loadUsers = () => {
-  try {
-    return {
-      users: JSON.parse(usersSeed).map((user, index) => ({
-        id: Number(user.id) || index + 1,
-        firstName: String(user.firstName ?? '').trim(),
-        lastName: String(user.lastName ?? '').trim(),
-        age: String(user.age ?? '').trim(),
-        gender: genders.includes(String(user.gender ?? '').trim().toLowerCase())
-          ? String(user.gender ?? '').trim().toLowerCase()
-          : '',
-        contactNumber: String(user.contactNumber ?? '').trim(),
-        email: String(user.email ?? '').trim().toLowerCase(),
-        role: roles.includes(String(user.role ?? '').trim().toLowerCase())
-          ? String(user.role ?? '').trim().toLowerCase()
-          : 'editor',
-        username: String(user.username ?? '').trim().toLowerCase(),
-        password: String(user.password ?? ''),
-        address: String(user.address ?? '').trim(),
-        isActive: typeof user.isActive === 'boolean' ? user.isActive : true,
-      })),
-      error: '',
-    };
-  } catch {
-    return {
-      users: [],
-      error: 'Unable to read users from src/assets/users.json.',
-    };
-  }
-};
-
-const seed = loadUsers();
-
 const UsersPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [users, setUsers] = useState(seed.users);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ open: false, id: null });
   const [form, setForm] = useState(blankForm);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   // /* --- ENHANCEMENT 2: Search and Filter State --- */
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterType, setFilterType] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   // /* ---------------------------------------------- */
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const { data } = await fetchUsers();
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('type') !== 'admin') {
+      navigate('/dashboard', { replace: true });
+    } else {
+      loadUsers();
+    }
+  }, []);
 
   const resetForm = () => {
     setForm({ ...blankForm });
@@ -103,8 +94,9 @@ const UsersPage = () => {
   };
 
   const openModal = (user) => {
-    setModal({ open: true, id: user?.id ?? null });
-    setForm(user ? { ...blankForm, ...user } : { ...blankForm });
+    setApiError('');
+    setModal({ open: true, id: user?._id ?? null });
+    setForm(user ? { ...blankForm, ...user, password: '' } : { ...blankForm });
     setErrors({});
   };
 
@@ -137,7 +129,7 @@ const UsersPage = () => {
       ['gender', 'Gender'],
       ['contactNumber', 'Contact number'],
       ['email', 'Email'],
-      ['role', 'Role'],
+      ['type', 'Type'],
       ['username', 'Username'],
       ['password', 'Password'],
       ['address', 'Address'],
@@ -147,20 +139,24 @@ const UsersPage = () => {
       }
     });
 
+    if (!modal.id && !String(form.password).trim()) {
+      nextErrors.password = 'Password is required.';
+    }
+
     if (!nextErrors.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       nextErrors.email = 'Enter a valid email address.';
     }
 
-    if (!nextErrors.email && users.some((user) => user.id !== modal.id && user.email === email)) {
+    if (!nextErrors.email && users.some((user) => user._id !== modal.id && user.email === email)) {
       nextErrors.email = 'Email address already exists.';
     }
 
-    if (!nextErrors.username && users.some((user) => user.id !== modal.id && user.username === username)) {
+    if (!nextErrors.username && users.some((user) => user._id !== modal.id && user.username === username)) {
       nextErrors.username = 'Username already exists.';
     }
 
     // /* --- ENHANCEMENT 3: Improved Form Validation --- */
-    if (!nextErrors.password && form.password.length < 8) {
+    if (!nextErrors.password && form.password && form.password.length < 8) {
       nextErrors.password = 'Password must be at least 8 characters long.';
     }
     if (!nextErrors.contactNumber && !/^\d{11}$/.test(form.contactNumber.trim())) {
@@ -183,8 +179,9 @@ const UsersPage = () => {
     return nextErrors;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setApiError('');
     const nextErrors = validate();
 
     if (Object.keys(nextErrors).length) {
@@ -199,52 +196,56 @@ const UsersPage = () => {
       gender: form.gender.trim().toLowerCase(),
       contactNumber: form.contactNumber.trim(),
       email: form.email.trim().toLowerCase(),
-      role: form.role.trim().toLowerCase(),
+      type: form.type.trim().toLowerCase(),
       username: form.username.trim().toLowerCase(),
       password: form.password,
       address: form.address.trim(),
       isActive: form.isActive,
     };
 
-    setUsers((prev) =>
-      modal.id
-        ? prev.map((user) => (user.id === modal.id ? { ...user, ...nextUser } : user))
-        : [
-            ...prev,
-            {
-              id: prev.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) + 1,
-              ...nextUser,
-            },
-          ]
-    );
+    if (!nextUser.password) {
+      delete nextUser.password;
+    }
 
-    closeModal();
+    try {
+      if (modal.id) {
+        await updateUser(modal.id, nextUser);
+      } else {
+        await createUser(nextUser);
+      }
+      loadUsers();
+      closeModal();
+    } catch (error) {
+      setApiError(error.response?.data?.message || 'Failed to save user. Please try again.');
+      console.error('Error saving user:', error);
+    }
   };
 
-  const toggleStatus = (id) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, isActive: !user.isActive } : user
-      )
-    );
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      await updateUser(id, { isActive: !currentStatus });
+      loadUsers();
+    } catch (error) {
+      console.error('Error toggling status:', error);
+    }
   };
 
   // /* --- ENHANCEMENT 2: Search and Filter Logic --- */
   const filteredUsers = users.filter((user) => {
     const matchesSearch = 
       searchTerm === '' || 
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.username || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    const matchesType = filterType === 'all' || user.type === filterType;
     const matchesGender = filterGender === 'all' || user.gender === filterGender;
     const matchesStatus = filterStatus === 'all' || 
       (filterStatus === 'active' && user.isActive) || 
       (filterStatus === 'inactive' && !user.isActive);
 
-    return matchesSearch && matchesRole && matchesGender && matchesStatus;
+    return matchesSearch && matchesType && matchesGender && matchesStatus;
   });
   // /* ---------------------------------------------- */
 
@@ -260,13 +261,13 @@ const UsersPage = () => {
   });
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 60 },
+    { field: '_id', headerName: 'ID', width: 90 },
     {
       field: 'fullName',
       headerName: 'Full Name',
       flex: 1,
       minWidth: 130,
-      valueGetter: (_, row) => `${row.firstName} ${row.lastName}`.trim(),
+      valueGetter: (_, row) => `${row.firstName || ''} ${row.lastName || ''}`.trim(),
     },
     { field: 'username', headerName: 'Username', flex: 1, minWidth: 110 },
     { field: 'age', headerName: 'Age', width: 60 },
@@ -284,10 +285,10 @@ const UsersPage = () => {
       minWidth: 160,
     },
     {
-      field: 'role',
-      headerName: 'Role',
+      field: 'type',
+      headerName: 'Type',
       width: 80,
-      valueGetter: (_, row) => labelize(row.role),
+      valueGetter: (_, row) => labelize(row.type),
     },
     {
       field: 'status',
@@ -318,7 +319,7 @@ const UsersPage = () => {
             size="small"
             variant="contained"
             color={row.isActive ? 'warning' : 'success'}
-            onClick={() => toggleStatus(row.id)}
+            onClick={() => toggleStatus(row._id, row.isActive)}
           >
             {row.isActive ? 'Disable' : 'Activate'}
           </Button>
@@ -349,12 +350,6 @@ const UsersPage = () => {
         </Box>
       </Stack>
 
-      {seed.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {seed.error}
-        </Alert>
-      ) : null}
-
       {/* /* --- ENHANCEMENT 2: Search and Filter UI --- */ }
       <Card sx={{ ...cohesiveCardStyle, mb: 4 }}>
         <CardContent sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, p: 2, pb: '16px !important' }}>
@@ -368,14 +363,14 @@ const UsersPage = () => {
           />
           <TextField
             select
-            label="Role"
+            label="Type"
             size="small"
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
             sx={{ minWidth: { xs: '100%', sm: 120 } }}
           >
-            <MenuItem value="all">All Roles</MenuItem>
-            {roles.map((r) => <MenuItem key={r} value={r}>{labelize(r)}</MenuItem>)}
+            <MenuItem value="all">All Types</MenuItem>
+            {userTypes.map((t) => <MenuItem key={t} value={t}>{labelize(t)}</MenuItem>)}
           </TextField>
           <TextField
             select
@@ -436,6 +431,8 @@ const UsersPage = () => {
               <DataGrid
               rows={filteredUsers}
               columns={columns}
+              getRowId={(row) => row._id}
+              loading={loading}
               disableRowSelectionOnClick
               pageSizeOptions={[5, 10]}
               initialState={{
@@ -468,13 +465,22 @@ const UsersPage = () => {
           <DialogTitle>{modal.id ? 'Edit User' : 'Add User'}</DialogTitle>
           <DialogContent dividers sx={{ px: { xs: 2, sm: 3 } }}>
             <Stack spacing={2} sx={{ pt: 1 }}>
+              {apiError && (
+                <Alert severity="error" sx={{ mb: 1 }}>
+                  {apiError}
+                </Alert>
+              )}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField {...fieldProps('firstName', 'First Name')} />
                 <TextField {...fieldProps('lastName', 'Last Name')} />
               </Stack>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField {...fieldProps('age', 'Age')} />
-                <TextField {...fieldProps('gender', 'Gender', { select: true })}>
+                {/* --- ENHANCEMENT 3: Fix MUI Out-of-Range Console Warning --- */}
+                {/* Added SelectProps={{ displayEmpty: true }} and a hidden empty MenuItem to handle blank initial state */}
+                <TextField {...fieldProps('gender', 'Gender', { select: true, SelectProps: { displayEmpty: true } })}>
+                  <MenuItem value="" disabled sx={{ display: 'none' }}></MenuItem>
+                  {/* ----------------------------------------------------------- */}
                   {genders.map((gender) => (
                     <MenuItem key={gender} value={gender}>
                       {labelize(gender)}
@@ -487,10 +493,10 @@ const UsersPage = () => {
                 <TextField {...fieldProps('email', 'Email Address', { type: 'email' })} />
               </Stack>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField {...fieldProps('role', 'Role', { select: true })}>
-                  {roles.map((role) => (
-                    <MenuItem key={role} value={role}>
-                      {labelize(role)}
+                <TextField {...fieldProps('type', 'Type', { select: true })}>
+                  {userTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {labelize(type)}
                     </MenuItem>
                   ))}
                 </TextField>

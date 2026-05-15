@@ -1,5 +1,7 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
+import { loginUser } from '../../services/userService';
 
 const inputClasses =
   'mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-1 focus:ring-sky-500';
@@ -7,6 +9,31 @@ const inputClasses =
 const actionButtonClassName = 'w-full rounded-xl py-3 text-[11px] tracking-[0.2em] uppercase';
 
 const SignInPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      // Call the login API
+      const { data } = await loginUser({ email, password });
+      console.log('Login successful:', data);
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('firstName', data.firstName);
+      localStorage.setItem('type', data.type); // use this for dynamic rendering
+
+      // Navigate to the dashboard with the user's email and type
+      navigate('/dashboard', { state: { firstName: data.firstName, type: data.type } });
+    } catch (err) {
+      console.error('Login failed:', err.response?.data?.message || err.message);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    }
+  };
+
   return (
     <>
       <div className="mb-8 text-center">
@@ -16,7 +43,13 @@ const SignInPage = () => {
         </p>
       </div>
 
-      <form className="space-y-5">
+      {error && (
+        <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100">
+          {error}
+        </div>
+      )}
+
+      <form className="space-y-5" onSubmit={handleLogin}>
         <div>
           <label htmlFor="signin-email" className="text-sm font-medium text-slate-700">
             Email Address
@@ -27,6 +60,9 @@ const SignInPage = () => {
             placeholder="you@example.com"
             autoComplete="email"
             className={inputClasses}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
 
@@ -45,6 +81,9 @@ const SignInPage = () => {
             placeholder="••••••••"
             autoComplete="current-password"
             className={inputClasses}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
 

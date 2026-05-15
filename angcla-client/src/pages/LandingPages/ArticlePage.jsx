@@ -1,10 +1,28 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Button from '../../components/Button';
-import articles from '../../assets/article-content.js';
+import { fetchArticles } from '../../services/articleService';
+import staticArticles from '../../assets/article-content.js';
 
 const ArticlePage = () => {
   const { name } = useParams();
-  const article = articles.find(article => article.name === name);
+  const [article, setArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchArticles()
+      .then((res) => {
+        // Look for the article in the database first, then fallback to static articles
+        const dbArticle = res.data.articles.find(a => a.name === name);
+        const fallbackArticle = staticArticles.find(a => a.name === name);
+        
+        setArticle(dbArticle || fallbackArticle);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [name]);
+
+  if (loading) return null; // Avoid flickering layout while fetching
 
   if (!article) {
     return (
