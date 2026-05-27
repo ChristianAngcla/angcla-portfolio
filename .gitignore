@@ -1,0 +1,5 @@
+angcla-server/.env
+angcla-server/node_modules
+
+angcla-client/node_modules
+angcla-client/.env
