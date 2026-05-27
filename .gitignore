@@ -1,5 +1,5 @@
-angcla-server/.env
-angcla-server/node_modules
-
-angcla-client/node_modules
-angcla-client/.env
+node_modules/
+.env
+.DS_Store
+dist/
+build/
